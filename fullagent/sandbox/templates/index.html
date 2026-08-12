@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web & File Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .chat-container { width: 100%; max-width: 750px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .chat-box { height: 450px; border: 1px solid #ddd; border-radius: 4px; overflow-y: scroll; padding: 15px; margin-bottom: 15px; background: #fafafa; display: flex; flex-direction: column; gap: 10px;}
+        .message { padding: 10px 14px; border-radius: 6px; max-width: 85%; line-height: 1.4; word-break: break-word; white-space: pre-wrap; }
+        .user { background: #007bff; color: white; align-self: flex-end; }
+        .assistant { background: #e9ecef; color: #333; align-self: flex-start; }
+        .input-group { display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Assistant (inside Openshell)</h2>
+        <div class="chat-box" id="chatBox">
+            <div class="message assistant">Hello! Ask me to browse any website or read/write local files. I will handle errors gracefully if files or pages are missing.</div>
+        </div>
+        <div class="input-group">
+            <input type="text" id="userInput" placeholder="Type your request here..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const inputField = document.getElementById("userInput");
+            const chatBox = document.getElementById("chatBox");
+            const text = inputField.value.trim();
+            if (!text) return;
+
+            chatBox.innerHTML += `<div class="message user">${escapeHtml(text)}</div>`;
+            inputField.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const loadingId = "loading-" + Date.now();
+            chatBox.innerHTML += `<div class="message assistant" id="${loadingId}">Thinking...</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await response.json();
+                
+                document.getElementById(loadingId).remove();
+                if (response.ok) {
+                    chatBox.innerHTML += `<div class="message assistant">${escapeHtml(data.response)}</div>`;
+                } else {
+                    chatBox.innerHTML += `<div class="message assistant" style="color:red;">Error: ${escapeHtml(data.detail || "Unknown error")}</div>`;
+                }
+            } catch (err) {
+                document.getElementById(loadingId).remove();
+                chatBox.innerHTML += `<div class="message assistant" style="color:red;">Network Error: ${escapeHtml(err.toString())}</div>`;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === "Enter") sendMessage();
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+</html>
