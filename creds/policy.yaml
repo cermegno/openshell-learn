@@ -11,13 +11,17 @@ process:
   run_as_group: sandbox
 
 network_policies:
-  httpbingo_access:
-    name: httpbingo-access
+  github_zen:
+    name: github-zen-only
     endpoints:
-      - host: httpbingo.org
+      - host: api.github.com
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-only
+        rules:
+          - allow:
+              method: GET
+              path: /zen
     binaries:
-      - { path: /usr/bin/curl }
+      - path: /usr/bin/python3
+      - path: /usr/local/bin/python3

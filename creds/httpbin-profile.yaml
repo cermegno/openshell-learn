@@ -1,0 +1,25 @@
+id: httpbin-profile
+display_name: HTTPbingo Demo
+description: Demonstration provider for OpenShell credential injection
+category: other
+
+credentials:
+  - name: api_key
+    description: HTTPbingo demonstration API key
+    env_vars:
+      - API_KEY
+    required: true
+    auth_style: bearer
+    header_name: authorization
+
+endpoints:
+  - host: httpbingo.org
+    port: 443
+    protocol: rest
+    access: full
+    enforcement: enforce
+
+binaries:
+  - path: /usr/bin/curl
+
+inference_capable: false
