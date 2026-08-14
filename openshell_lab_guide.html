@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NVIDIA OpenShell Lab Guide</title>
+<style>
+:root {
+    --bg:           #0a0e1a;
+    --bg-elevated:  #111827;
+    --bg-panel:     #0f1624;
+    --bg-card:      #131b2c;
+    --border:       #1f2937;
+    --border-strong:#374151;
+    --text:         #e5e7eb;
+    --text-muted:   #9ca3af;
+    --text-dim:     #B6B6B6;
+    --healthy:      #10b981;
+    --warning:      #f59e0b;
+    --critical:     #ef4444;
+    --accent:       #3b82f6;
+    --accent-hover: #2563eb;
+    --dell-blue:    #0076ce;
+    --nv-green:     #76b900;
+    --mono: "JetBrains Mono","SF Mono","Menlo",ui-monospace,monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI","Inter",system-ui,sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+
+/* =================== HERO =================== */
+.hero {
+    background: radial-gradient(ellipse at top, #1a2440 0%, var(--bg) 60%);
+    padding: 72px 32px 52px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(0,118,206,0.12) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(118,185,0,0.08) 0%, transparent 40%);
+    pointer-events: none;
+}
+.hero > * { position: relative; z-index: 1; }
+.hero-orb { position: absolute; border-radius: 50%; filter: blur(50px); will-change: transform; z-index: 0; }
+.hero-orb-1 { width: 380px; height: 380px; background: radial-gradient(circle, rgba(0,118,206,0.85) 0%, rgba(0,118,206,0) 70%); left: -4%; top: 8%; animation: orb-drift-a 16s ease-in-out infinite; opacity: 0.55; }
+.hero-orb-2 { width: 320px; height: 320px; background: radial-gradient(circle, rgba(118,185,0,0.75) 0%, rgba(118,185,0,0) 70%); right: -2%; top: 22%; animation: orb-drift-b 19s ease-in-out infinite; opacity: 0.45; }
+.hero-orb-3 { width: 280px; height: 280px; background: radial-gradient(circle, rgba(147,197,253,0.85) 0%, rgba(147,197,253,0) 70%); left: 40%; bottom: -10%; animation: orb-drift-c 13s ease-in-out infinite; opacity: 0.45; }
+@keyframes orb-drift-a { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(50px,30px) scale(1.05); } }
+@keyframes orb-drift-b { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-40px,50px) scale(1.07); } }
+@keyframes orb-drift-c { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-40px) scale(1.10); } }
+.hero-eyebrow {
+    display: inline-block;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    padding: 8px 20px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: linear-gradient(90deg, rgba(118,185,0,0.20) 0%, rgba(56,189,248,0.14) 50%, rgba(0,118,206,0.20) 100%);
+    box-shadow: 0 4px 18px rgba(0,118,206,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.hero h1 {
+    font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #fff 0%, #93c5fd 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.hero-tagline { color: var(--text-muted); font-size: 1.1rem; max-width: 720px; margin: 0 auto 28px; }
+.hero-meta { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 20px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+.hero-meta span { display: flex; align-items: center; gap: 6px; }
+.hero-meta .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--healthy); }
+
+/* =================== LAYOUT =================== */
+.shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 48px; max-width: 1280px; margin: 0 auto; padding: 48px 32px 96px; }
+@media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; gap: 24px; padding: 24px 18px; }
+    .toc { position: static !important; }
+}
+main { min-width: 0; }
+section { margin-bottom: 56px; }
+section h2 { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; color: #fff; margin: 0 0 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+section h3 { font-size: 1.2rem; font-weight: 700; color: #fff; margin: 34px 0 12px; }
+section p { margin: 0 0 14px; color: var(--text); }
+section p.lead { font-size: 1.02rem; color: var(--text-muted); }
+section ul, section ol { margin: 0 0 16px; padding-left: 22px; color: var(--text); }
+section li { margin-bottom: 6px; }
+strong { color: #fff; }
+
+/* =================== TOC — vertical stepper =================== */
+.toc { position: sticky; top: 24px; align-self: start; font-size: 13px; display: flex; flex-direction: column; gap: 0; }
+.toc-label { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 16px; padding-left: 4px; }
+.toc-step { position: relative; display: block; padding: 14px 14px 14px 44px; background: var(--bg-card); border-left: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); color: var(--text-muted); text-decoration: none; transition: border-color 0.2s, background 0.2s, color 0.2s; }
+.toc-step[data-step="1"] { border-top: 1px solid var(--border); border-radius: 8px 8px 0 0; }
+.toc-step[data-step="5"] + .toc-sub-list { border-radius: 0 0 8px 8px; }
+.toc-step.active { border-bottom-color: transparent; }
+.toc-step::before { content: attr(data-step); position: absolute; left: 12px; top: 14px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text-dim); border: 1.5px solid var(--border-strong); border-radius: 50%; transition: color 0.2s, border-color 0.2s, background 0.2s; }
+.toc-step .toc-step-title { display: block; font-weight: 600; font-size: 13px; color: inherit; line-height: 1.35; }
+.toc-step .toc-step-desc { display: block; font-size: 11.5px; color: var(--text-dim); margin-top: 3px; line-height: 1.4; }
+.toc-sub-list { display: none; padding: 0 14px 8px 44px; background: var(--bg-card); border-left: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.toc-sub-list a { display: block; padding: 2.5px 0; font-size: 11.5px; color: var(--text-dim); text-decoration: none; transition: color 0.15s; }
+.toc-sub-list a:hover { color: var(--text); }
+.toc-sub-list a.active { color: var(--accent); font-weight: 500; }
+.toc-step.active { color: #fff; border-left: 3px solid var(--accent); border-right: 1px solid var(--accent); border-top: 1px solid var(--accent); padding-left: 42px; background: linear-gradient(135deg, rgba(59,130,246,0.06) 0%, var(--bg-card) 100%); z-index: 1; }
+.toc-step.active + .toc-sub-list { display: block; border-left: 3px solid var(--accent); border-right: 1px solid var(--accent); border-bottom: 1px solid var(--accent); padding-left: 42px; }
+.toc-step.active::before { color: #fff; border-color: var(--accent); background: var(--accent); }
+.toc-step.visited::before { color: var(--healthy); border-color: var(--healthy); content: "\2713"; font-size: 12px; }
+.toc-step.visited { color: var(--text-muted); }
+.toc-step:hover { color: var(--text); }
+.toc-step.active:hover { color: #fff; }
+
+/* =================== TAKEAWAY BLOCK =================== */
+.takeaway-block { margin: 24px 0 0; padding: 24px 28px; background: linear-gradient(135deg, rgba(0,118,206,0.06) 0%, rgba(118,185,0,0.04) 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; box-shadow: inset 0 0 30px rgba(0,118,206,0.04); }
+.takeaway-title { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 16px; }
+.takeaway-list { padding-left: 20px; }
+.takeaway-list li { color: var(--text-muted); }
+.takeaway-foot { margin-top: 12px; font-size: 12.5px; color: var(--text-dim); font-style: italic; }
+
+/* =================== CODE / COPY =================== */
+code { font-family: var(--mono); font-size: 0.88em; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: #e0e7ff; }
+.codeblock { position: relative; margin: 16px 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.codeblock-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: rgba(0,0,0,0.25); border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+.codeblock pre { margin: 0; padding: 14px 18px; white-space: pre-wrap; word-wrap: break-word; font-family: var(--mono); font-size: 13px; line-height: 1.55; color: #d4e3f5; background: transparent; overflow-x: auto; }
+.codeblock pre code { background: transparent; border: none; padding: 0; font-size: inherit; color: inherit; }
+.copy-btn { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border-strong); border-radius: 4px; padding: 4px 10px; font-family: var(--sans); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; flex-shrink: 0; }
+.copy-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.copy-btn.copied { background: var(--healthy); border-color: var(--healthy); color: #042218; }
+
+/* =================== CALLOUT =================== */
+.callout { margin: 20px 0; padding: 14px 18px; border-left: 3px solid var(--accent); background: rgba(59,130,246,0.06); border-radius: 0 6px 6px 0; }
+.callout.warn { border-left-color: var(--warning); background: rgba(245,158,11,0.06); }
+.callout-title { font-weight: 600; color: #fff; margin-bottom: 4px; font-size: 13px; letter-spacing: 0.02em; }
+.callout p:last-child { margin-bottom: 0; }
+.callout code { background: rgba(0,0,0,0.3); }
+
+/* =================== TABLES =================== */
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; }
+.table th, .table td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.table th { color: var(--text-muted); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; background: var(--bg-card); }
+.table tr:last-child td { border-bottom: none; }
+.table code { font-size: 0.82em; }
+
+
+/* =================== CODEBLOCK DESTINATION HINTS =================== */
+.codeblock[data-dest="browser"]  { border-left: 3px solid rgba(96, 165, 250, 0.55); }
+.codeblock[data-dest="browser"]  .codeblock-header { background: rgba(96, 165, 250, 0.08); border-bottom-color: rgba(96, 165, 250, 0.2); }
+.codeblock[data-dest="sandbox"]  { border-left: 3px solid rgba(167, 139, 250, 0.55); }
+.codeblock[data-dest="sandbox"]  .codeblock-header { background: rgba(167, 139, 250, 0.08); border-bottom-color: rgba(167, 139, 250, 0.2); }
+.codeblock[data-dest="host"]     { border-left: 3px solid rgba(52, 211, 153, 0.55); }
+.codeblock[data-dest="host"]     .codeblock-header { background: rgba(52, 211, 153, 0.08); border-bottom-color: rgba(52, 211, 153, 0.2); }
+.codeblock-header .cb-app { font-weight: 700; }
+.codeblock-header .cb-lang { opacity: 0.55; }
+.codeblock-header .cb-lang::before { content: " \00B7  "; }
+.codeblock[data-dest="browser"] .codeblock-header .cb-app { color: #60a5fa; }
+.codeblock[data-dest="sandbox"] .codeblock-header .cb-app { color: #a78bfa; }
+.codeblock[data-dest="host"]    .codeblock-header .cb-app { color: #34d399; }
+
+/* =================== LEGEND =================== */
+.dest-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 20px 0 8px; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; }
+.dest-legend-item { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+.dest-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/* =================== TOAST =================== */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--healthy); color: #042218; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 999; animation: toast-in 0.2s ease-out; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* =================== RECAP =================== */
+.recap-list { list-style: none; padding: 0; }
+.recap-list li { padding: 12px 0 12px 28px; border-bottom: 1px solid var(--border); position: relative; }
+.recap-list li:last-child { border-bottom: none; }
+.recap-list li::before { content: "\2713"; position: absolute; left: 0; top: 12px; color: var(--healthy); font-weight: 700; }
+.recap-list strong { color: var(--accent); }
+
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+
+@media print {
+  body { margin: 0; padding: 0.4in 0.6in; background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .container, .dashboard, .shell, main { max-width: 100% !important; width: 100% !important; }
+  .toc { position: static !important; }
+  section, [class*="section"], .header { break-inside: avoid; margin-bottom: 20px !important; }
+  [class*="card"], [class*="Card"] { break-inside: avoid; padding: 18px !important; box-shadow: none !important; border: 1px solid rgba(0,0,0,0.08); }
+  [class*="grid"], [class*="row"] { gap: 10px !important; margin-bottom: 20px !important; }
+  table, thead { break-inside: avoid; }
+  .codeblock { break-inside: avoid; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .copy-btn { display: none !important; }
+}
+
+</style>
+</head>
+<body>
+
+<header class="hero">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+    <span class="hero-eyebrow">Hands-on Lab</span>
+    <h1>NVIDIA OPENSHELL LAB</h1>
+    <p class="hero-tagline">Providing secure runtimes for AI agents. Create sandboxes, apply and hot-reload policies, wire up a real agent to a local model, and see OpenShell inject credentials without ever exposing them to the agent.</p>
+    <div class="hero-meta">
+        <span><span class="dot"></span> Docker Compute Engine</span>
+        <span>Granite 1B (Ollama)</span>
+        <span>LiteLLM Gateway</span>
+        <span>OpenShell CLI</span>
+    </div>
+</header>
+
+<div class="shell">
+    <nav class="toc" id="toc">
+        <div class="toc-label">You are here</div>
+        <a href="#part-1" class="toc-step" data-step="1" data-section="part-1"><span class="toc-step-title">Welcome</span><span class="toc-step-desc">The problem, the four policy domains, and how to read this guide.</span></a>
+<div class="toc-sub-list" data-parent="part-1"><a href="#policy-domains">The four policy domains</a>
+<a href="#providers-note">Providers & inference</a></div>
+<a href="#part-2" class="toc-step" data-step="2" data-section="part-2"><span class="toc-step-title">Introduction to OpenShell</span><span class="toc-step-desc">Create a sandbox, test filesystem/process boundaries, and hot-reload network policy.</span></a>
+<div class="toc-sub-list" data-parent="part-2"><a href="#first-sandbox">Your first sandbox</a>
+<a href="#fs-process-policy">Filesystem &amp; process boundaries</a>
+<a href="#policy-at-creation">Applying a policy at creation</a>
+<a href="#hot-reload-network">Hot-reloading network policy</a></div>
+<a href="#part-3" class="toc-step" data-step="3" data-section="part-3"><span class="toc-step-title">Experiment with a Real Agent</span><span class="toc-step-desc">Bind a pre-configured LiteLLM/Ollama provider, and expose a full agent to a browser.</span></a>
+<div class="toc-sub-list" data-parent="part-3"><a href="#ollama-litellm">Ollama + LiteLLM, pre-configured for you</a>
+<a href="#providers-inference">Providers &amp; inference binding</a>
+<a href="#build-agent-sandbox">Building the full agent sandbox</a>
+<a href="#expose-to-browser">Exposing the agent to a browser</a>
+<a href="#registry-image">Deploying from a registry image</a></div>
+<a href="#part-4" class="toc-step" data-step="4" data-section="part-4"><span class="toc-step-title">Credentials Injection</span><span class="toc-step-desc">Providers V2: lintable, versioned credential profiles you can attach to a live sandbox.</span></a>
+<div class="toc-sub-list" data-parent="part-4"><a href="#providers-v2">Providers V2: profiles with lifecycle</a>
+<a href="#create-attach-provider">Creating and attaching a provider</a>
+<a href="#verify-injection">Verifying credential injection</a></div>
+<a href="#part-5" class="toc-step" data-step="5" data-section="part-5"><span class="toc-step-title">Recap</span><span class="toc-step-desc">What each OpenShell building block does, plus a quick command reference.</span></a>
+<div class="toc-sub-list" data-parent="part-5"><a href="#lab-recap">Lab recap</a>
+<a href="#quick-ref">Quick command reference</a></div>
+    </nav>
+
+    <main>
+    <section><h2 id="part-1">Part 1: Welcome</h2>
+<p class="lead"><strong>Autonomous AI agents are increasingly expected to read and write files, call external APIs, install packages, and interact with language models on their own</strong>, often over long-running sessions with little human supervision. This autonomy is exactly what makes agents useful — but it also means a compromised, misconfigured, or simply overly capable agent can leak credentials, exfiltrate data, or take unintended actions on the host system. Telling an agent “don’t do that” in a prompt is persuasion, not enforcement — a sufficiently motivated or confused agent can still try.</p>
+<p><strong>NVIDIA OpenShell</strong> addresses this problem by moving security controls out of the agent’s reach and into the environment around it. Every agent runs inside an isolated sandbox governed by a declarative YAML policy that is enforced at the infrastructure and kernel level, not by the agent’s own behavior.</p>
+<h3 id="policy-domains">The four policy domains</h3>
+<div class="table-wrap"><table class="table"><thead><tr><th>Domain</th><th>Controls</th><th>Locking behavior</th></tr></thead><tbody><tr><td><strong>Filesystem</strong></td><td>Which paths the agent may read or write</td><td>Kernel-level isolation, locked in at sandbox creation</td></tr><tr><td><strong>Network</strong></td><td>Which outbound destinations the agent may reach</td><td>Denied by default, hot-reloadable at runtime</td></tr><tr><td><strong>Process</strong></td><td>Which binaries the agent may execute</td><td>Locked in at sandbox creation</td></tr><tr><td><strong>Inference</strong></td><td>Which LLM backend serves the agent’s model calls</td><td>Credentials swapped at the routing layer</td></tr></tbody></table></div>
+<p>Because these controls sit outside the agent’s process boundary,the agent cannot negotiate with them, override them, or leak a credential it was never given — even if it is compromised.</p>
+<div class="takeaway-block"><div class="takeaway-title">What you’ll take away from this lab</div><ul class="takeaway-list"><li>Create sandboxes and understand the four OpenShell compute engines (Docker, Podman, Kubernetes, MicroVM).</li><li>Apply and hot-reload filesystem, network, and process policies.</li><li>Wire up a real agent to a local model served through Ollama and LiteLLM.</li><li>See how OpenShell injects credentials into outbound requests without ever exposing them to the agent.</li><li>Use Providers V2 to attach and detach credential profiles from a live sandbox.</li></ul><div class="takeaway-foot">Index of this lab: Introduction to OpenShell → Experiment with a Real Agent → Credentials Injection → Recap.</div></div>
+<h3 id="providers-note">Providers &amp; inference, in one sentence</h3>
+<div class="callout"><div class="callout-title">Why this matters</div><p>You’ll work with <strong>two terminal windows</strong> throughout this lab, plus a <strong>browser</strong> later on. Neither terminal has a fixed job — either one can be a plain host shell, or become a sandbox shell after you <code>create</code> or <code>connect</code> into a sandbox. What matters for each command is that <em>context</em>, not which physical window it’s in, so every snippet below is labeled and color-coded to tell you whether it expects a sandbox shell, a host shell, or your browser.</p></div>
+<div class="dest-legend"><div class="dest-legend-item"><span class="dest-legend-swatch" style="background:#60a5fa"></span> Browser</div><div class="dest-legend-item"><span class="dest-legend-swatch" style="background:#a78bfa"></span> Sandbox Terminal</div><div class="dest-legend-item"><span class="dest-legend-swatch" style="background:#34d399"></span> Host Terminal</div></div>
+</section>
+<section><h2 id="part-2">Part 2: Introduction to OpenShell</h2>
+<p>In this section we create a sandbox, access its terminal, and test OpenShell’s core filesystem, network, and process controls.</p>
+<h3 id="first-sandbox">Your first sandbox</h3>
+<p>Open a terminal and go to the <code>oshell/intro</code> directory:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>cd /home/demouser/Desktop/oshell/intro</code></pre></div>
+<p>OpenShell management is done with the OpenShell CLI. Let’s create our first sandbox:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox create --name intro</code></pre></div>
+<p>This creates a sandbox from the base template and drops you directly into its terminal — from this point, this window <strong>is</strong> your sandbox terminal. A sandbox is the runtime where agents will run. OpenShell supports 4 different “compute engines” to create sandboxes on top of: Docker, Podman, Kubernetes, and MicroVM. In this lab we use Docker — OpenShell creates a container, starts a “supervisor,” which is then tasked with creating a child process for the sandbox.</p>
+<p>After creation, click the <strong>“+”</strong> symbol at the top-left of the terminal application to open a second terminal session. We will use this tab to run commands against the host, outside the sandbox. For example, list the sandboxes that currently exist:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox list</code></pre></div>
+<p>The <code>get</code> command shows a detailed description of the sandbox, including its status, policy, and configuration:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox get intro</code></pre></div>
+<p>You can also inspect logs at the sandbox level. There is an optional <code>--since</code> flag to show only the most recent logs (for example, <code>--since 5m</code>):</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell logs intro</code></pre></div>
+<p>You can also inspect the underlying container and its logs directly — useful for lower-level troubleshooting. Notice how the container image came from <code>ghcr.io</code> (GitHub Container Registry) and corresponds to the OpenShell base image:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>docker ps
+docker logs &lt;container ID or name&gt;</code></pre></div>
+<h3 id="fs-process-policy">Filesystem &amp; process boundaries</h3>
+<p>Go back to the <strong>sandbox terminal</strong> and perform a few filesystem actions. First check the present working directory and attempt to create an empty file called “test”:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>pwd
+touch test</code></pre></div>
+<p>The sandbox has write access to the <code>sandbox/</code> folder. So, we can show the contents of the folder to verify the file was indeed created:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>ls</code></pre></div>
+<p>In contrast, the policy sets the <code>bin/</code> directory as read-only, so the following file creation should fail:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>touch /bin/test</code></pre></div>
+<p>By default, a sandbox gets read-write access only to the current active workspace directory and temporary session folders. The rest of the host filesystem is either entirely inaccessible or restricted to strict read-only access. System binaries (such as those in <code>/bin/</code>) and host configuration layers cannot be modified under the default policy — this is why the last command above fails.</p>
+<div class="callout"><div class="callout-title">Locked in at creation</div><p><strong>Filesystem and process boundaries are locked in permanently at sandbox creation.</strong> They cannot be loosened or tightened by applying a new policy later; a sandbox with those boundaries in place must be recreated to change them.</p><p>From a networking perspective, every outbound connection attempt is blocked by default. Unlike the filesystem, however, <strong>network policy can be hot-reloaded</strong> into a running sandbox without recreating it — you’ll see this in action shortly.</p></div>
+<p>For now, let’s delete this sandbox and instead attach a policy explicitly during creation. In the <strong>sandbox terminal</strong>, exit the sandbox:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>exit</code></pre></div>
+<p>Now delete the sandbox, on the <strong>host terminal</strong>:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox delete intro</code></pre></div>
+<h3 id="policy-at-creation">Applying a policy at creation</h3>
+<p>Examine the policy file with the <code>less</code> command. It opens in the terminal; scroll with the cursor keys and press <code>q</code> to return:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>less policy.yaml</code></pre></div>
+<p>The policy grants filesystem access to certain folders. It also opens network egress access to <code>api.github.com/zen</code> — a test URL that returns a random sentence, useful for confirming outbound access is working. Notice how the <code>binaries</code> section explicitly names the application (<code>python3</code>) that is allowed to reach that URL; any other binary attempting the same request will be denied.</p>
+<p>Let’s re-create the <code>intro</code> sandbox, this time applying the policy at creation time:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox create --name intro --policy ./policy.yaml</code></pre></div>
+<p>Move to the second terminal so we can run a few commands against the host. Use <code>get</code> again to confirm the policy was applied:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox get intro</code></pre></div>
+<p>Now we are going to run a Python script inside the sandbox that automates a few tests for us. Let’s first examine the script on the <strong>host terminal</strong>:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>less test.py</code></pre></div>
+<p>As you can see, it includes both filesystem tests and network policy tests. Let’s upload this script to the sandbox:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox upload intro test.py /sandbox/test.py</code></pre></div>
+<p>Now switch to the <strong>sandbox terminal</strong> and confirm the file is there:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>ls -l</code></pre></div>
+<p>Let’s run it:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>python3 test.py</code></pre></div>
+<p>It fails. The script uses the <code>requests</code> library to reach out over the network, but <code>requests</code> is not installed. Let’s install it with Python’s standard package manager, <code>pip</code>:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>pip install requests</code></pre></div>
+<h3 id="hot-reload-network">Hot-reloading network policy</h3>
+<p>The installation fails five times and then gives up. Why? Check the sandbox logs on the <strong>host terminal</strong> to find out:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell logs intro</code></pre></div>
+<p><code>pip</code> is trying to reach <code>pypi.org:443</code>, the largest public repository of Python packages. Since our policy only allows egress to <code>api.github.com/zen</code> via <code>python3</code>, <code>pip</code>’s request is denied — the sandbox is doing exactly what it was told.</p>
+<p>We’re going to change the policy to allow access to PyPI. Recall that network policy can be updated on a running sandbox without recreating it. In the same folder there is a second policy file, <code>devpolicy.yaml</code>:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>less devpolicy.yaml</code></pre></div>
+<p>Apply <code>devpolicy.yaml</code>. Notice how OpenShell keeps track of the policy’s version as you update it:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell policy set intro --policy devpolicy.yaml --wait</code></pre></div>
+<p>This illustrates a common real-world pattern: you may not want a production agent to have open access to a package repository like PyPI, since that would let it install arbitrary code on its own. Instead, you can maintain a looser “development” policy to configure and provision the sandbox, then swap in a stricter “production” policy before the agent starts doing real work — all without rebuilding the sandbox.</p>
+<p>Now return to the <strong>sandbox terminal</strong>; you should be able to install the <code>requests</code> library:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>pip install requests</code></pre></div>
+<p>With the library installed, the script should now run successfully. Run it again and verify the results are what you expected:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>python3 test.py</code></pre></div>
+<p>This time the script runs and successfully reaches the <code>api.github.com/zen</code> URL. Let’s try reaching it again, but this time using the <code>curl</code> command instead of the Python script:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>curl https://api.github.com/zen</code></pre></div>
+<p>It fails. Why? Recall that the <code>binaries</code> section of the policy explicitly allows <code>python3</code> to reach <code>api.github.com/zen</code>. <code>curl</code> is a different binary, so the exact same URL is blocked when requested through it — <strong>network policy in OpenShell is enforced per binary, not just per destination.</strong></p>
+<p>Exit the sandbox terminal:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>exit</code></pre></div>
+</section>
+<section><h2 id="part-3">Part 3: Experiment with a Real Agent</h2>
+<p>So far we have logged into the sandbox terminal and run commands manually. This has been useful for getting familiar with OpenShell, but in the real world we want a more automated workflow — and we haven’t used a model yet. In this section we’ll work with a small, real agent that calls into a language model.</p>
+<p>As a first step, change directory to <code>fullagent</code> in the two terminals you already have open:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>cd /home/demouser/Desktop/oshell/fullagent</code></pre></div>
+<h3 id="ollama-litellm">Ollama + LiteLLM, pre-configured for you</h3>
+<p>This environment has been pre-configured with <strong>Ollama</strong>, a tool that makes it very easy to run models locally. Run the following command to check which models are installed:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>ollama ls</code></pre></div>
+<p>You should see a “granite” model with 1 billion parameters. Despite its small size, this model is well suited to tool use and instruction following. We have compiled a version of Granite that is deliberately restricted to a 4K-token context window to keep it small and fast for this lab.</p>
+<p>One thing Ollama does not provide out of the box is the ability to require an API key to authenticate callers — it’s designed to run on a local machine, where that isn’t usually a concern. We want to demonstrate how the OpenShell proxy can inject sensitive information, like an API key, into outbound requests so that the agent inside the sandbox is never aware of the real secret.</p>
+<p>To add key-based authentication on top of Ollama, we have deployed another tool called <strong>LiteLLM</strong>, which acts as a proxy. You can inspect the configuration file that was used to start LiteLLM:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>cat /home/demouser/Desktop/oshell/litellm-config.yaml</code></pre></div>
+<p>Notice how it points at Ollama, which listens on port <code>11434</code>, and how it enforces key-based authentication via a master key, <code>topsecret123</code>. You can verify it is running:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>ps -ef | grep litellm</code></pre></div>
+<p>Confirm that LiteLLM is routing requests to the Granite model in Ollama on port <code>4000</code>. The first request might take a few seconds to respond while the model loads into memory. Use <code>curl</code> to check that everything is working:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>curl http://0.0.0.0:4000/v1/chat/completions \
+  -H "Authorization: Bearer topsecret123" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "granite", "messages": [{"role": "user", "content": "Hello!"}]}'</code></pre></div>
+<p>If you run a second request without the key, it should fail and complain that no API key was supplied:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>curl http://0.0.0.0:4000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "granite", "messages": [{"role": "user", "content": "Hello!"}]}'</code></pre></div>
+<h3 id="providers-inference">Providers &amp; inference binding</h3>
+<div class="callout"><div class="callout-title">A brief note on OpenShell providers</div><p>In OpenShell, a <strong>provider</strong> is a named credential bundle — an API key, token, or other secret — that OpenShell manages and injects into a sandbox on its behalf. Instead of an agent holding a real secret directly, the agent’s code refers only to the provider by name; OpenShell substitutes the actual credential when the request actually leaves the sandbox. A compromised or curious agent can never read out a credential it was never handed in the first place.</p></div>
+<p>You’ll also notice the <code>--config OPENAI_BASE_URL=http://host.openshell.internal:4000/v1</code> flag below, rather than a literal host IP address or <code>localhost</code>. <code>host.openshell.internal</code> is a special hostname that the OpenShell gateway resolves to “the host machine, as seen through the gateway.” Routing through this name ensures that traffic destined for the host always passes through OpenShell’s policy engine and, for inference traffic, its privacy router, rather than taking a shortcut straight to the host network. It also means the sandbox’s network policy doesn’t need to be aware of the host’s actual IP, which can change between environments.</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell provider create --name litellm-granite --type openai --credential API_KEY=topsecret123 --config OPENAI_BASE_URL=http://host.openshell.internal:4000/v1
+openshell provider list
+openshell provider get litellm-granite</code></pre></div>
+<div class="callout"><div class="callout-title">A brief note on OpenShell inference</div><p>The <strong>inference</strong> domain is a special case of routing dedicated to LLM traffic. Rather than treating a model endpoint like any other network destination, OpenShell lets you bind a specific provider and model as the sandbox’s managed inference backend. Calls the agent makes to its local, generic-looking model endpoint are transparently routed by the privacy router to that backend, with the provider’s real credential injected at the gateway — the agent’s own code never sees <code>topsecret123</code>. Like network policy, the inference binding is hot-reloadable, so you can point a sandbox at a different backend without recreating it.</p></div>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell inference set --provider litellm-granite --model granite --no-verify
+openshell inference get</code></pre></div>
+<h3 id="build-agent-sandbox">Building the full agent sandbox</h3>
+<p>This time we are going to create the sandbox by pointing at a Dockerfile instead of the base template. Examine the Dockerfile:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>less Dockerfile</code></pre></div>
+<p>As you can see in the Dockerfile, the contents of the <code>sandbox</code> folder will be copied into the sandbox image. Take a look at the <code>sandbox</code> folder:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>ls sandbox/</code></pre></div>
+<p>Now examine the app that implements the agent. Notice that the agent has access to three tools for operating on the filesystem and scraping websites, and that the app exposes two routes: an API for chat completions and a simple web UI:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>less sandbox/app.py</code></pre></div>
+<p>In a production deployment, it might make more sense to run the GUI outside the sandbox and have it call the API endpoint inside the sandbox over the network. For convenience in this lab, we have kept both the GUI and the API inside the sandbox.</p>
+<p>Let’s quickly examine the policy:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>less policy.yaml</code></pre></div>
+<p>Now let’s deploy the sandbox — this may take around 30 seconds. The <code>.</code> after <code>--from</code> is important as it tells the OpenShell CLI where to locate the Dockerfile:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox create --name fullagent --policy ./policy.yaml --from . -- python3 app.py</code></pre></div>
+<p>Now connect to the sandbox:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox connect fullagent</code></pre></div>
+<p>Once inside the <strong>sandbox terminal</strong>, send a test request against its chat API. Notice how the request doesn’t include the key that LiteLLM requires — OpenShell is intercepting the request and injecting it before sending it on to LiteLLM:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>curl -X POST http://127.0.0.1:5000/api/chat -H "Content-Type: application/json" -d '{"message": "Hello!"}'</code></pre></div>
+<p>Let’s exit the sandbox terminal:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>exit</code></pre></div>
+<h3 id="expose-to-browser">Exposing the agent to a browser</h3>
+<p>So far we have confirmed the managed inference endpoint can be reached from <em>inside</em> the sandbox. Now let’s learn how the agent itself can be reached from <em>outside</em> the sandbox.</p>
+<div class="callout"><div class="callout-title">A brief note on OpenShell services</div><p>While filesystem, network, and process policy govern what the sandbox is allowed to reach <em>out</em> to, <strong>services</strong> govern the opposite direction — what is allowed to reach <em>in</em>. Exposing a service publishes a port from inside the sandbox so that it becomes reachable from the host (and, depending on configuration, the wider network), giving you a controlled ingress path into the agent without disabling any of the sandbox’s isolation guarantees.</p></div>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell service expose fullagent 5000
+openshell service list</code></pre></div>
+<p>At this point the sandbox should be reachable from the host, so we can test the agent through a <strong>browser</strong>. Open Firefox, navigate to the exposed URL shown by <code>openshell service list</code>, and try the following prompts in the agent’s chat UI:</p>
+<p>Try writing and reading back a file in an allowed path:</p>
+<div class="codeblock" data-dest="browser"><div class="codeblock-header"><span><span class="cb-app">Browser</span><span class="cb-lang">chat</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>Add 7+5 and put the result in a new file called test.txt inside the /sandbox directory</code></pre></div>
+<p>Try reading from a read-only location:</p>
+<div class="codeblock" data-dest="browser"><div class="codeblock-header"><span><span class="cb-app">Browser</span><span class="cb-lang">chat</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>Read file /etc/hosts and tell me the internal IP address of docker</code></pre></div>
+<p>Test the web-scraping tool. Wikipedia is allowed by policy. Be careful, the URL is case-sensitive:</p>
+<div class="codeblock" data-dest="browser"><div class="codeblock-header"><span><span class="cb-app">Browser</span><span class="cb-lang">chat</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>Summarize this webpage https://en.wikipedia.org/wiki/Australia</code></pre></div>
+<p>Verify that policy blocks other sites:</p>
+<div class="codeblock" data-dest="browser"><div class="codeblock-header"><span><span class="cb-app">Browser</span><span class="cb-lang">chat</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>Summarize this webpage https://docs.ollama.com/quickstart</code></pre></div>
+<p>Back on the <strong>host terminal</strong>, you can inspect the agent’s logs (press <code>CTRL + C</code> to exit the log stream):</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell logs fullagent | tail</code></pre></div>
+<h3 id="registry-image">Deploying from a registry image</h3>
+<p>In this lab we built the sandbox’s container image by pointing at a folder containing a Dockerfile. In production, organizations will more often want to deploy a sandbox from an existing container image already sitting in a registry — likely built automatically by a CI/CD pipeline. The <code>--from</code> flag supports this directly. In the example below, we create a sandbox from an image published on Docker Hub. You can inspect the image’s page here:</p>
+<div class="codeblock" data-dest="browser"><div class="codeblock-header"><span><span class="cb-app">Browser</span><span class="cb-lang">url</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>https://hub.docker.com/r/cermegno/oshelltest</code></pre></div>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox create --name registrytest --from cermegno/oshelltest:v1.0</code></pre></div>
+<p>It pulled the image and created the sandbox, dropping you into its <strong>sandbox terminal</strong>. Let’s exit the sandbox terminal:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>exit</code></pre></div>
+<p>You can inspect the sandbox:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox get registrytest</code></pre></div>
+</section>
+<section><h2 id="part-4">Part 4: Credentials Injection</h2>
+<p>In this section we’ll see that the same mechanism used to hide the inference endpoint’s credentials from the sandbox can be used for <em>any</em> external site — not just for LLM inference. This act of injecting credentials on the agent’s behalf is accomplished with providers.</p>
+<h3 id="providers-v2">Providers V2: profiles with lifecycle</h3>
+<div class="callout"><div class="callout-title">Providers vs. Providers V2</div><p>The provider mechanism you used earlier (creating the <code>litellm-granite</code> provider) is the original, “v1” model — a named credential is created once and then referenced directly when you create a sandbox or set up inference. It has no concept of lifecycle beyond creation and deletion.</p><p><strong>Providers V2</strong> builds on this with full lifecycle management: reusable, versioned <em>profiles</em> that describe a credential integration (including a network policy fragment), which can be validated (<code>lint</code>), imported into a shared catalog, instantiated as named providers, and — critically — <strong>attached to or detached from a running sandbox on demand</strong>. V1 providers are essentially fixed at sandbox creation time; V2 providers can be added to or removed from a live sandbox without recreating it, with the provider’s network policy merged into the sandbox’s existing policy automatically.</p><p>Providers V2 turns providers from credential records into profile-backed access bundles. Use it when you want provider-owned policy rules to travel with provider credentials — for example, a GitHub provider can describe both <code>GITHUB_TOKEN</code> and the GitHub API endpoints a sandbox needs, so users don’t have to copy the same network policy into every sandbox.</p></div>
+<p>Let’s navigate to the <code>creds</code> folder, which contains the files for this lab. Paste the following command in <strong>both terminals</strong>:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>cd /home/demouser/Desktop/oshell/creds/</code></pre></div>
+<p>Examine <code>policy.yaml</code>:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>less policy.yaml</code></pre></div>
+<p>Let’s create a sandbox with this policy:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox create --name credtest --policy ./policy.yaml</code></pre></div>
+<p>Now let’s enable Providers V2. After running the command below, you’ll be asked to confirm with <code>(y/n)</code> — type <code>y</code>:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell settings set --global --key providers_v2_enabled --value true</code></pre></div>
+<h3 id="create-attach-provider">Creating and attaching a provider</h3>
+<p>Now we’ll create a provider profile. As noted above, the V2 toolset adds lifecycle management on top of simple credential creation. Examine the profile definition:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>less httpbin-profile.yaml</code></pre></div>
+<p>We can “lint” it to check the integrity of the profile file before importing:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell provider profile lint -f httpbin-profile.yaml</code></pre></div>
+<p>Let’s import the profile:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell provider profile import -f httpbin-profile.yaml</code></pre></div>
+<p>Confirm it has been created by listing all profiles. You’ll find it in the “Other” category, near the top — the rest are built-in profile types:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell provider list-profiles</code></pre></div>
+<p>Now we can create a provider of the profile type we just defined. From a security standpoint, it’s best practice to read the credential value from an environment variable rather than typing it on the command line. So, first define <code>API_KEY</code> as an environment variable on the host, then create the provider. Notice how OpenShell reads <code>API_KEY</code> from the environment via the <code>--credential</code> flag:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>export API_KEY=secret456
+openshell provider create --name httpbin-demo --type httpbin-profile --credential API_KEY</code></pre></div>
+<p>You can double-check the provider exists. Notice its type matches the profile we created earlier:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell provider list
+openshell provider get httpbin-demo</code></pre></div>
+<p>Finally, attach the provider to the sandbox:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox provider attach credtest httpbin-demo</code></pre></div>
+<p>This shows all providers currently attached to the sandbox:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox provider list credtest</code></pre></div>
+<p>If you <code>get</code> the sandbox now, you’ll see that the httpbin network policy fragment has been merged into the sandbox’s existing network policy. Before enabling Providers V2, the only way of defining network policies was through policy files — now there is a network policy section associated with the provider, so they need to be merged. Notice how OpenShell prefixes the merged entry with an underscore (<code>_</code>) to distinguish it from the sandbox’s own native policy:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox get credtest</code></pre></div>
+<h3 id="verify-injection">Verifying credential injection</h3>
+<p>Finally, let’s connect to the sandbox and check whether it can see the credential. Open a terminal session into the sandbox:</p>
+<div class="codeblock" data-dest="host"><div class="codeblock-header"><span><span class="cb-app">Host Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>openshell sandbox connect credtest</code></pre></div>
+<p>Inside the <strong>sandbox terminal</strong>, check whether the environment variable exists. Notice that it holds a placeholder value rather than the real credential:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>echo $API_KEY</code></pre></div>
+<p>We can now confirm that the OpenShell proxy is intercepting the outgoing request and injecting the real credential into the headers. <code>httpbingo.org</code> is a popular testing site among developers — it simply echoes back the details of whatever request you send it, which makes it great for testing:</p>
+<div class="codeblock" data-dest="sandbox"><div class="codeblock-header"><span><span class="cb-app">Sandbox Terminal</span><span class="cb-lang">bash</span></span><button class="copy-btn">📋 Copy</button></div><pre><code>curl -sS -H "Authorization: Bearer $API_KEY" https://httpbingo.org/headers</code></pre></div>
+<p>The output should show the <code>Authorization</code> header containing the real injected key, <code>secret456</code> — even though, as we saw, the sandbox itself only ever held a placeholder value. This is the same substitution mechanism you saw earlier with the LiteLLM inference provider, applied here to an arbitrary external API.</p>
+</section>
+<section><h2 id="part-5">Part 5: Recap</h2>
+<h3 id="lab-recap">Lab recap</h3>
+<p>Over the course of this lab, you worked through the core building blocks of NVIDIA OpenShell:</p>
+<ul class="recap-list"><li><strong>Sandboxes</strong> give each agent an isolated runtime with its own filesystem, process, and network boundaries, created either from a base template, a Dockerfile, or an existing registry image.</li><li><strong>Filesystem and process policy</strong> are locked in at sandbox creation and cannot be loosened later — you saw this when the sandbox could read/write only its workspace, and when <code>curl</code> was blocked while <code>python3</code> was allowed under the same network rule.</li><li><strong>Network policy</strong> is denied by default but can be hot-reloaded into a running sandbox, as you did when switching from <code>policy.yaml</code> to <code>devpolicy.yaml</code> to unblock PyPI access for development.</li><li><strong>Providers</strong> let OpenShell inject real credentials into outbound requests — for both managed inference (the LiteLLM/Granite setup, resolved through <code>host.openshell.internal</code>) and arbitrary external APIs (the httpbin example) — without ever exposing the real secret to the agent inside the sandbox.</li><li><strong>Inference routing</strong> treats LLM traffic as a first-class, hot-reloadable policy domain, separate from generic network egress.</li><li><strong>Services</strong> open a controlled ingress path into a sandbox, which you used to expose the full agent’s web UI and chat API to a browser outside the sandbox.</li><li><strong>Providers V2</strong> extends the basic provider model with reusable, lintable profiles and the ability to attach or detach credentials from a live sandbox, merging their network policy in automatically.</li></ul>
+<p class="lead">Together, these controls let you give an agent broad functional capability — reading files, calling tools, invoking models, reaching external APIs — while keeping every one of those actions constrained by policy that lives outside the agent’s own control, and fully auditable through <code>openshell logs</code>.</p>
+<h3 id="quick-ref">Quick command reference</h3>
+<div class="table-wrap"><table class="table"><thead><tr><th>Command</th><th>What it does</th><th>Where</th></tr></thead><tbody><tr><td><code>openshell sandbox create --name X [--policy p.yaml] [--from .|image]</code></td><td>Create a sandbox from the base template, a Dockerfile, or a registry image</td><td>Host</td></tr><tr><td><code>openshell sandbox list / get / delete</code></td><td>List, inspect, or remove a sandbox</td><td>Host</td></tr><tr><td><code>openshell sandbox connect &lt;name&gt;</code></td><td>Open a terminal session inside a running sandbox</td><td>Host</td></tr><tr><td><code>openshell sandbox upload &lt;name&gt; src dst</code></td><td>Copy a file from the host into the sandbox</td><td>Host</td></tr><tr><td><code>openshell policy set &lt;name&gt; --policy p.yaml --wait</code></td><td>Hot-reload network policy on a running sandbox</td><td>Host</td></tr><tr><td><code>openshell provider create / list / get</code></td><td>Create and inspect a v1 credential provider</td><td>Host</td></tr><tr><td><code>openshell inference set --provider P --model M</code></td><td>Bind a sandbox’s managed inference backend</td><td>Host</td></tr><tr><td><code>openshell service expose &lt;name&gt; &lt;port&gt;</code></td><td>Publish a sandbox port so it’s reachable from the host/network</td><td>Host</td></tr><tr><td><code>openshell provider profile lint / import -f p.yaml</code></td><td>Validate and register a Providers V2 profile</td><td>Host</td></tr><tr><td><code>openshell sandbox provider attach / list &lt;name&gt;</code></td><td>Attach a V2 provider to a live sandbox, or list attached providers</td><td>Host</td></tr><tr><td><code>openshell logs &lt;name&gt;</code></td><td>Stream or fetch sandbox logs</td><td>Host</td></tr></tbody></table></div>
+</section>
+    </main>
+</div>
+
+
+<script>
+  window.GleanBridge && window.GleanBridge.postMessage({
+    actionId: 'export-pdf',
+    type: 'glean-add-menu',
+    metadata: { label: 'Export as PDF', icon: 'export' }
+  });
+  window.GleanBridge && window.GleanBridge.onMessage('action', function(data) {
+    if (data.actionId === 'export-pdf') window.print();
+  });
+</script>
+
+<script>
+
+document.querySelectorAll(".codeblock").forEach(block => {
+    const btn = block.querySelector(".copy-btn");
+    if (!btn) return;
+    const cmd = block.querySelector("pre code").textContent;
+    const isUrl = cmd.trim().startsWith("http://") || cmd.trim().startsWith("https://");
+    if (isUrl) {
+        btn.innerHTML = "\uD83D\uDD17 Open";
+        btn.addEventListener("click", () => { window.open(cmd.trim(), "_blank"); });
+    } else {
+        btn.addEventListener("click", () => {
+            const textToCopy = cmd;
+            const done = () => {
+                btn.classList.add("copied");
+                const originalHTML = btn.innerHTML;
+                btn.textContent = "\u2713 Copied";
+                setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = originalHTML; }, 1400);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy).then(done, () => fallbackCopy(textToCopy, btn, done));
+            } else {
+                fallbackCopy(textToCopy, btn, done);
+            }
+        });
+    }
+});
+
+function fallbackCopy(text, btn, done) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+    try { document.execCommand('copy'); done(); }
+    catch (err) { showToast("Copy failed"); }
+    document.body.removeChild(textArea);
+}
+
+function showToast(text) {
+    document.querySelectorAll(".toast").forEach(t => t.remove());
+    const t = document.createElement("div");
+    t.className = "toast"; t.textContent = "\u2713 " + text;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1600);
+}
+
+// ============== TOC stepper tracking ==============
+const tocSteps = Array.from(document.querySelectorAll(".toc-step"));
+const tocSubLinks = Array.from(document.querySelectorAll(".toc-sub-list a"));
+const partSections = tocSteps.map(s => document.getElementById(s.dataset.section));
+const subTargets = tocSubLinks.map(a => document.getElementById(a.getAttribute("href").slice(1)));
+
+function updateStepper() {
+    const y = window.scrollY + 150;
+    let activeIdx = 0;
+    for (let i = partSections.length - 1; i >= 0; i--) {
+        if (partSections[i] && partSections[i].getBoundingClientRect().top + window.scrollY <= y) {
+            activeIdx = i;
+            break;
+        }
+    }
+    tocSteps.forEach((step, i) => {
+        step.classList.remove("active", "visited");
+        if (i < activeIdx) step.classList.add("visited");
+        else if (i === activeIdx) step.classList.add("active");
+    });
+    document.querySelectorAll(".toc-sub-list").forEach(sl => {
+        const prev = sl.previousElementSibling;
+        sl.style.display = (prev && prev.classList.contains("active")) ? "" : "none";
+    });
+    let activeSub = null;
+    for (let i = subTargets.length - 1; i >= 0; i--) {
+        if (subTargets[i] && subTargets[i].getBoundingClientRect().top + window.scrollY <= y) {
+            activeSub = i;
+            break;
+        }
+    }
+    tocSubLinks.forEach((a, i) => a.classList.toggle("active", i === activeSub));
+}
+window.addEventListener("scroll", updateStepper, { passive: true });
+updateStepper();
+
+</script>
+</body>
+</html>
