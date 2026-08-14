@@ -226,7 +226,7 @@ Notice how it points at Ollama, which listens on port `11434`, and how it enforc
 ps -ef | grep litellm
 ```
 
-On the host terminal, confirm that LiteLLM is routing requests to the Granite model in Ollama on port `4000`. The first request might take a few seconds to respond while the model loads into memory. Use `curl` to check that everything is working:
+Confirm that LiteLLM is routing requests to the Granite model in Ollama on port `4000`. The first request might take a few seconds to respond while the model loads into memory. Use `curl` to check that everything is working:
 
 ```bash
 curl http://0.0.0.0:4000/v1/chat/completions \
@@ -292,7 +292,7 @@ Now let's deploy the sandbox — this may take around 30 seconds. The `.` after 
 openshell sandbox create --name fullagent --policy ./policy.yaml --from . -- python3 app.py
 ```
 
-On the host terminal, connect to the sandbox.
+Now connect to the sandbox.
 
 ```bash
 openshell sandbox connect fullagent
@@ -302,7 +302,7 @@ Once inside the sandbox terminal, send a test request against its chat API. Noti
 curl -X POST http://127.0.0.1:5000/api/chat -H "Content-Type: application/json" -d '{"message": "Hello!"}'
 ```
 
-Let's exit the sandbox console:
+Let's exit the sandbox terminal:
 
 ```bash
 exit
@@ -339,7 +339,7 @@ In this lab we built the sandbox's container image by pointing at a folder conta
 openshell sandbox create --name registrytest --from cermegno/oshelltest:v1.0
 ```
 
-It pulled the image and created the sandbox. Let's exit the sandbox:
+It pulled the image and created the sandbox. Let's exit the sandbox terminal:
 
 ```bash
 exit
@@ -359,13 +359,11 @@ In this section we'll see that the same mechanism used to hide the inference end
 
 Providers v2 turns providers from credential records into profile-backed access bundles. A provider profile describes the credentials, endpoints, binaries and policy rules. Use Providers v2 when you want provider-owned policy rules to travel with provider credentials. For example, a GitHub provider can describe both GITHUB_TOKEN and the GitHub API endpoints that a sandbox needs, so users do not have to copy the same network policy into every sandbox. We'll enable and use V2 in this section.
 
-Let's navigate to the `creds` folder. Paste the following command in both the host and the sandbox terminals:
+Let's navigate to the `creds` folder which contains the files for this lab. Paste the following command in both terminals:
 
 ```bash
 cd /home/demouser/Desktop/oshell/creds/
 ```
-
-The third terminal running LiteLLM is no longer required for this section. You can press `CTRL + C` to stop LiteLLM and close that terminal.
 
 Examine `policy.yaml`:
 
@@ -373,7 +371,7 @@ Examine `policy.yaml`:
 less policy.yaml
 ```
 
-Let's create the sandbox:
+Let's create a sandbox with this policy:
 
 ```bash
 openshell sandbox create --name credtest --policy ./policy.yaml
@@ -391,7 +389,7 @@ Now we'll create a provider profile. As noted above, the V2 toolset adds lifecyc
 less httpbin-profile.yaml
 ```
 
-We can "lint" it to check its integrity before importing:
+We can "lint" it to check the integrity of the profile file before importing:
 
 ```bash
 openshell provider profile lint -f httpbin-profile.yaml
@@ -447,7 +445,7 @@ Finally, let's connect to the sandbox and check whether it can see the credentia
 openshell sandbox connect credtest
 ```
 
-Inside that session, check whether the environment variable exists. Notice that it holds a placeholder value rather than the real credential:
+Inside the sandbox session, check whether the environment variable exists. Notice that it holds a placeholder value rather than the real credential:
 
 ```bash
 echo $API_KEY
